@@ -20,7 +20,7 @@ const BookingsTable = () => {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const bookingsPerPage = 5;
+  const bookingsPerPage = 9;
 
   // Fetch data from backend
   useEffect(() => {

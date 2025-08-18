@@ -58,10 +58,11 @@ const updateStatus = async () => {
         }),
       }
     );
+    console.log("Response::: ", res)
     const data = await res.json();
     console.log("Updated booking:", data);
     alert("Booking status updated successfully!");
-    navigate("/bookings");
+    navigate("/");
   } catch (err) {
     console.error("Error updating booking:", err);
     alert("Failed to update booking status");

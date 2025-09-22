@@ -1,4 +1,4 @@
-import "../css/AdminAnalytics.css"; 
+import "../css/AdminAnalytics.css";
 import React, { useState, useMemo, useEffect } from "react";
 import { Line, Pie } from "react-chartjs-2";
 import "chart.js/auto";
@@ -11,7 +11,9 @@ const AnalyticsReports = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const res = await fetch("https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings");
+        const res = await fetch(
+          "https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings"
+        );
         const data = await res.json();
         setBookingsData(data.bookings || []);
       } catch (err) {
@@ -21,52 +23,121 @@ const AnalyticsReports = () => {
     fetchBookings();
   }, []);
 
-  // Date threshold
-  const getDateThreshold = () => {
-    if (selectedPeriod === "all") return null;
+  // Helper: get date range for current period
+  const getDateRange = (period) => {
+    if (period === "all") return [null, null];
     const now = new Date();
-    const days = selectedPeriod === "7d" ? 7 : 30;
-    return new Date(now.setDate(now.getDate() - days));
+    const days = period === "7d" ? 7 : 30;
+
+    const end = new Date(now);
+    const start = new Date(now);
+    start.setDate(now.getDate() - days);
+
+    return [start, end];
   };
 
-  // Filtered bookings
-  const filteredBookings = useMemo(() => {
-    const threshold = getDateThreshold();
-    if (!threshold) return bookingsData;
-    return bookingsData.filter((b) => {
-      const bookingDate = new Date(b.date_of_booking);
-      return bookingDate >= threshold;
-    });
-  }, [selectedPeriod, bookingsData]);
+  // Current + previous period ranges
+  const [currentStart, currentEnd] = getDateRange(selectedPeriod);
+  const [prevStart, prevEnd] =
+    currentStart && currentEnd
+      ? [
+          new Date(currentStart.getTime() - (currentEnd - currentStart)),
+          currentStart,
+        ]
+      : [null, null];
 
-  // Summary values
-  const totalRevenue = filteredBookings.reduce(
+  // Filtered bookings for current + previous
+  const currentBookings = useMemo(() => {
+    return bookingsData.filter((b) => {
+      if (!currentStart || !currentEnd) return true;
+      const d = new Date(b.date_of_booking);
+      return d >= currentStart && d <= currentEnd;
+    });
+  }, [bookingsData, currentStart, currentEnd]);
+
+  const previousBookings = useMemo(() => {
+    return bookingsData.filter((b) => {
+      if (!prevStart || !prevEnd) return false;
+      const d = new Date(b.date_of_booking);
+      return d >= prevStart && d <= prevEnd;
+    });
+  }, [bookingsData, prevStart, prevEnd]);
+
+  // Metrics calculation helper
+  const calcChange = (current, previous) => {
+    if (previous === 0) return 0;
+    return (((current - previous) / previous) * 100).toFixed(1);
+  };
+
+  // Total revenue
+  const totalRevenue = currentBookings.reduce(
     (sum, b) => sum + (parseFloat(b.price) || 0),
     0
   );
-  const totalBookings = filteredBookings.length;
+  const prevRevenue = previousBookings.reduce(
+    (sum, b) => sum + (parseFloat(b.price) || 0),
+    0
+  );
+  const revenueChange = calcChange(totalRevenue, prevRevenue);
+
+  // Total bookings
+  const totalBookings = currentBookings.length;
+  const prevBookings = previousBookings.length;
+  const bookingsChange = calcChange(totalBookings, prevBookings);
+
+  // Average group size
   const averageGroupSize =
-    filteredBookings.length > 0
+    currentBookings.length > 0
       ? (
-          filteredBookings.reduce(
+          currentBookings.reduce(
             (sum, b) => sum + (parseInt(b.group_size) || 0),
             0
-          ) / filteredBookings.length
+          ) / currentBookings.length
         ).toFixed(1)
       : 0;
-  const conversionRate = 68; // Placeholder until we have real data
+
+  const prevGroupSize =
+    previousBookings.length > 0
+      ? (
+          previousBookings.reduce(
+            (sum, b) => sum + (parseInt(b.group_size) || 0),
+            0
+          ) / previousBookings.length
+        ).toFixed(1)
+      : 0;
+
+  const groupSizeChange = calcChange(averageGroupSize, prevGroupSize);
+
+  // Conversion rate
+  const confirmedBookings = currentBookings.filter(
+    (b) => b.status && b.status.toLowerCase() === "confirmed"
+  ).length;
+
+  const prevConfirmed = previousBookings.filter(
+    (b) => b.status && b.status.toLowerCase() === "confirmed"
+  ).length;
+
+  const conversionRate =
+    totalBookings > 0 ? ((confirmedBookings / totalBookings) * 100).toFixed(1) : 0;
+
+  const prevConversion =
+    prevBookings > 0 ? ((prevConfirmed / prevBookings) * 100).toFixed(1) : 0;
+
+  const conversionChange = calcChange(conversionRate, prevConversion);
 
   // Bookings per service
-  const services = [...new Set(filteredBookings.map((b) => b.service_type || "Unknown"))];
+  const services = [
+    ...new Set(currentBookings.map((b) => b.service_type || "Unknown")),
+  ];
   const bookingsPerService = services.map(
-    (service) => filteredBookings.filter((b) => b.service_type === service).length
+    (service) => currentBookings.filter((b) => b.service_type === service).length
   );
 
   // Line chart data
   const lineChartData = useMemo(() => {
     const dateCounts = {};
 
-    filteredBookings.forEach((b) => {
+    currentBookings.forEach((b) => {
       const date = new Date(b.date_of_booking).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -88,7 +159,7 @@ const AnalyticsReports = () => {
         },
       ],
     };
-  }, [filteredBookings]);
+  }, [currentBookings]);
 
   // Pie chart data
   const pieChartData = {
@@ -124,7 +195,11 @@ const AnalyticsReports = () => {
           <div>
             <p className="card-label">Total Bookings</p>
             <p className="card-value">{totalBookings}</p>
-            <p className="card-subtext positive">+12% from last period</p>
+            <p
+              className={`card-subtext ${bookingsChange >= 0 ? "positive" : "negative"}`}
+            >
+              {bookingsChange >= 0 ? `+${bookingsChange}%` : `${bookingsChange}%`} from last period
+            </p>
           </div>
         </div>
 
@@ -133,7 +208,11 @@ const AnalyticsReports = () => {
           <div>
             <p className="card-label">Total Revenue</p>
             <p className="card-value">${totalRevenue.toLocaleString()}</p>
-            <p className="card-subtext positive">+8.5% from last period</p>
+            <p
+              className={`card-subtext ${revenueChange >= 0 ? "positive" : "negative"}`}
+            >
+              {revenueChange >= 0 ? `+${revenueChange}%` : `${revenueChange}%`} from last period
+            </p>
           </div>
         </div>
 
@@ -142,7 +221,11 @@ const AnalyticsReports = () => {
           <div>
             <p className="card-label">Avg Group Size</p>
             <p className="card-value">{averageGroupSize}</p>
-            <p className="card-subtext negative">-2.1% from last period</p>
+            <p
+              className={`card-subtext ${groupSizeChange >= 0 ? "positive" : "negative"}`}
+            >
+              {groupSizeChange >= 0 ? `+${groupSizeChange}%` : `${groupSizeChange}%`} from last period
+            </p>
           </div>
         </div>
 
@@ -151,7 +234,11 @@ const AnalyticsReports = () => {
           <div>
             <p className="card-label">Conversion Rate</p>
             <p className="card-value">{conversionRate}%</p>
-            <p className="card-subtext positive">+4.2% from last period</p>
+            <p
+              className={`card-subtext ${conversionChange >= 0 ? "positive" : "negative"}`}
+            >
+              {conversionChange >= 0 ? `+${conversionChange}%` : `${conversionChange}%`} from last period
+            </p>
           </div>
         </div>
       </div>

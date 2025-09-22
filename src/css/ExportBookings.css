@@ -1,0 +1,80 @@
+.export-container {
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin: 20px;
+}
+
+.export-container h2 {
+  margin-bottom: 10px;
+  font-size: 1.6rem;
+  color: #333;
+}
+
+.export-container p {
+  margin-bottom: 20px;
+  color: #555;
+}
+
+.export-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.export-actions .button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.export-actions .button:first-child {
+  background-color: #2563eb;
+  color: white;
+}
+
+.export-actions .button:first-child:hover {
+  background-color: #1e40af;
+}
+
+.export-actions .button:last-child {
+  background-color: #10b981;
+  color: white;
+}
+
+.export-actions .button:last-child:hover {
+  background-color: #059669;
+}
+
+/* Bookings Table reused styling */
+.bookings-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.bookings-table th,
+.bookings-table td {
+  border: 1px solid #e5e7eb;
+  padding: 10px;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.bookings-table th {
+  background-color: #f9fafb;
+  color: #374151;
+  font-weight: 600;
+}
+
+.bookings-table tr:nth-child(even) {
+  background-color: #f3f4f6;
+}
+
+.bookings-table tr:hover {
+  background-color: #e5e7eb;
+}

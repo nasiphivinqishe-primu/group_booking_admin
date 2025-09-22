@@ -26,7 +26,7 @@ const BookingsTable = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const res = await fetch("https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings");
+        const res = await fetch("https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings");
         const data = await res.json();
         console.log("::::", data)
         const formatted = data.bookings.map((b) => {
@@ -79,7 +79,10 @@ const BookingsTable = () => {
   const handleView = (bookingId) => {
     navigate(`/booking/${bookingId}`);
   };
+  const handleExport = () => {
+    navigate('/export-bookings');
 
+  }
 
   if (loading) {
     return <div className="bookings-container">Loading bookings...</div>;
@@ -90,7 +93,7 @@ const BookingsTable = () => {
       <div className="bookings-header">
         <h2>Recent Bookings</h2>
         <div>
-          <button className="button export-btn">Export</button>
+          <button className="button export-btn" onClick={handleExport}>Export</button>
           <button className="button new-booking-btn" onClick={handleNewBooking}>
             + New Booking
           </button>

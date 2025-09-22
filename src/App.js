@@ -7,6 +7,7 @@ import CancellationLogsPage from './pages/CancellationLogsPage';
 import ConfigurePolicies from './pages/ConfigurePolicies';
 import Sidebar from './components/Sidebar';
 import ViewBooking from './pages/ViewBooking';
+import ExportBookings from './pages/ExportBookings';
 
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
             <Route path="/cancellation-logs" element={<CancellationLogsPage />} />
             <Route path="/configure-policies" element={<ConfigurePolicies />} />
             <Route path="/booking/:id" element={<ViewBooking />} />
+            <Route path="/export-bookings" element={<ExportBookings />} />
           </Routes>
         </div>
       </div>

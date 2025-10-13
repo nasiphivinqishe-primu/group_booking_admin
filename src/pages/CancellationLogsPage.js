@@ -1,37 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../css/CancellationLogs.css";
 
-const sampleLogs = [
-  {
-    id: 1,
-    user: "John Doe",
-    action: "cancelled",
-    date: "2025-08-07",
-    reason: "User unavailable",
-  },
-  {
-    id: 2,
-    user: "Jane Smith",
-    action: "rescheduled",
-    date: "2025-08-06",
-    reason: "Client requested new time",
-  },
-  {
-    id: 3,
-    user: "Mike Johnson",
-    action: "cancelled",
-    date: "2025-08-05",
-    reason: "Weather issues",
-  },
-    {
-    id: 4,
-    user: "Mike Mikes",
-    action: "cancelled",
-    date: "2025-08-05",
-    reason: "Payment not received",
-  },
-];
-
 const CancellationLogsPage = () => {
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
@@ -40,11 +9,48 @@ const CancellationLogsPage = () => {
     date: "",
     user: "",
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // In production, fetch logs from your backend here.
-    setLogs(sampleLogs);
-    setFilteredLogs(sampleLogs);
+    const fetchLogs = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        // 👇 Replace with your actual API endpoint
+        const res = await fetch(
+          "https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/getCancelledAndRescheduledBookings"
+        );
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch logs: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        const bookings = data.bookings || [];
+        console.log(bookings)
+        // Map backend fields to frontend log structure
+        const mappedLogs = bookings.map((b, index) => ({
+          id: b.id || index,
+          user: b.user_id || "Unknown",
+          action: b.status === "cancelled" ? "cancelled" : "rescheduled",
+          date: b.date || new Date().toISOString().slice(0, 10),        
+          reason: b.reason || "N/A",
+        }));
+
+        setLogs(mappedLogs);
+        setFilteredLogs(mappedLogs);
+      } catch (err) {
+        console.error("Error fetching logs:", err);
+        setError("Failed to load logs. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
   }, []);
 
   useEffect(() => {
@@ -95,7 +101,11 @@ const CancellationLogsPage = () => {
         />
       </div>
 
-      {filteredLogs.length === 0 ? (
+      {loading ? (
+        <p>Loading logs...</p>
+      ) : error ? (
+        <p className="error">{error}</p>
+      ) : filteredLogs.length === 0 ? (
         <p>No logs found for the selected filters.</p>
       ) : (
         filteredLogs.map((log) => (
@@ -116,8 +126,7 @@ const CancellationLogsPage = () => {
               </span>
             </p>
             <p>
-              <strong>Date:</strong> {log.date}
-            </p>
+              <strong>Date:</strong> {log.date}</p>
             <p>
               <strong>Reason:</strong> {log.reason}
             </p>

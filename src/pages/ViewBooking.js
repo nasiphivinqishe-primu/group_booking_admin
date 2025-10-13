@@ -26,7 +26,7 @@ const ViewBooking = () => {
       const fetchBooking = async () => {
         try {
           const res = await fetch(
-            `https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getBookingById?booking_id=${id}`
+            ` https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/getBookingById?booking_id=${id}`
           );
           const data = await res.json();
           if (data.bookings && data.bookings.length > 0) {
@@ -46,8 +46,12 @@ const ViewBooking = () => {
 
 const updateStatus = async () => {
   try {
+console.log("Check user first:::", booking)
+console.log("Check user id first:::", id)
+
+
     const res = await fetch(
-      "https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
+      "https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -59,6 +63,7 @@ const updateStatus = async () => {
       }
     );
     console.log("Response::: ", res)
+
     const data = await res.json();
     console.log("Updated booking:", data);
     alert("Booking status updated successfully!");

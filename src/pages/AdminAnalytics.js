@@ -1,5 +1,7 @@
 import "../css/AdminAnalytics.css";
 import React, { useState, useMemo, useEffect } from "react";
+import { fetchAuthSession } from "@aws-amplify/auth";
+
 import { Line, Pie } from "react-chartjs-2";
 import "chart.js/auto";
 
@@ -8,20 +10,37 @@ const AnalyticsReports = () => {
   const [bookingsData, setBookingsData] = useState([]);
 
   // Fetch bookings from backend
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const res = await fetch(
-          "https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings"
-        );
-        const data = await res.json();
-        setBookingsData(data.bookings || []);
-      } catch (err) {
-        console.error("Error fetching bookings:", err);
+useEffect(() => {
+  const fetchBookings = async () => {
+    try {
+      // ✅ Get Cognito session and ID token
+      const session = await fetchAuthSession({ bypassCache: false });
+      const token = session.tokens.idToken.toString();
+
+      const res = await fetch(
+        "https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!res.ok) {
+        console.error("Failed:", res.status);
+        throw new Error(`HTTP error! Status: ${res.status}`);
       }
-    };
-    fetchBookings();
-  }, []);
+
+      const data = await res.json();
+      setBookingsData(data.bookings || []);
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+    }
+  };
+
+  fetchBookings();
+}, []);
 
   // Helper: get date range for current period
   const getDateRange = (period) => {

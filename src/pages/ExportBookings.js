@@ -23,9 +23,6 @@ const ExportBookings = () => {
       try {
         const res = await fetch("https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings");
         const data = await res.json();
-
-        console.log(data)
-
         const formatted = data.bookings.map((b) => ({
           id: b.booking_id,
           groupName: b.user_id || 'N/A',
@@ -64,7 +61,7 @@ const ExportBookings = () => {
   // Send bookings via email (placeholder)
   const handleSendEmail = async () => {
     try {
-      // This will later call your Lambda endpoint
+      // This will later call Lambda endpoint
       console.log("Sending bookings via email:", bookings);
 
       alert("Bookings will be sent via email (Lambda integration coming soon).");

@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { fetchAuthSession } from "@aws-amplify/auth";
+
 import "../css/CancellationLogs.css";
 
 const CancellationLogsPage = () => {
@@ -18,25 +20,31 @@ const CancellationLogsPage = () => {
         setLoading(true);
         setError("");
 
-        // 👇 Replace with your actual API endpoint
-        const res = await fetch(
-          "https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/getCancelledAndRescheduledBookings"
-        );
+        const session = await fetchAuthSession({ bypassCache: false });
+        const token = session.tokens.idToken.toString();
 
+        const res = await fetch(
+          "https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getCancelledAndRescheduledBookings",
+          {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
         if (!res.ok) {
           throw new Error(`Failed to fetch logs: ${res.status}`);
         }
 
         const data = await res.json();
-
         const bookings = data.bookings || [];
-        console.log(bookings)
-        // Map backend fields to frontend log structure
+        
         const mappedLogs = bookings.map((b, index) => ({
           id: b.id || index,
           user: b.user_id || "Unknown",
           action: b.status === "cancelled" ? "cancelled" : "rescheduled",
-          date: b.date || new Date().toISOString().slice(0, 10),        
+          date: b.date || new Date().toISOString().slice(0, 10),
           reason: b.reason || "N/A",
         }));
 

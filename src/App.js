@@ -40,19 +40,11 @@ function App() {
       try {
         // First get the user
         const user = await getCurrentUser();
-        console.log("User basic info:", user);
-
         // Then fetch tokens/session
         const session = await fetchAuthSession();
         const payload = session.tokens?.idToken?.payload || {};
-
-        console.log("ID token payload:", payload);
-
         setUserEmail(payload.email || user.signInDetails?.loginId || "Unknown");
         setGroups(payload["cognito:groups"] || []);
-
-        console.log("Authenticated user email:", payload.email);
-        console.log("User groups:", payload["cognito:groups"]);
       } catch (err) {
         console.error("Error fetching user session:", err);
       }
@@ -87,7 +79,7 @@ function App() {
       <header
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "center", // horizontally center welcome message
           alignItems: "center",
           padding: "10px 20px",
           background: "#f9f4fe",
@@ -95,14 +87,6 @@ function App() {
         }}
       >
         <h3>Welcome, {userEmail}</h3>
-        <button
-          onClick={async () => {
-            await signOut();
-          }}
-          style={{ padding: "6px 12px" }}
-        >
-          Logout
-        </button>
       </header>
       <div style={{ display: "flex" }}>
         <div style={{ marginLeft: "220px", padding: "20px", width: "100%" }}>

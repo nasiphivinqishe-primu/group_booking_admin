@@ -14,6 +14,8 @@ import {
   Stack,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { fetchAuthSession } from "@aws-amplify/auth";
+
 
 const ViewBooking = () => {
   const { id } = useParams();
@@ -23,11 +25,29 @@ const ViewBooking = () => {
 
   useEffect(() => {
     if (id) {
+      console.log(":::::ID:::", id)
       const fetchBooking = async () => {
         try {
+          // ✅ Get Cognito session and access token
+          const session = await fetchAuthSession({ bypassCache: false });
+          const token = session.tokens.idToken.toString();
+
           const res = await fetch(
-            ` https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/getBookingById?booking_id=${id}`
+            `https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getBookingById?booking_id=${id}`,
+            {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
           );
+
+          if (!res.ok) {
+            console.error("Failed:", res.status);
+            throw new Error(`HTTP error! Status: ${res.status}`);
+          }
+
           const data = await res.json();
           if (data.bookings && data.bookings.length > 0) {
             setBooking(data.bookings[0]);
@@ -43,37 +63,36 @@ const ViewBooking = () => {
       fetchBooking();
     }
   }, [id]);
+  const updateStatus = async () => {
+    try {
+      // ✅ Get Cognito session and access token
+      const session = await fetchAuthSession({ bypassCache: false });
+      const token = session.tokens.idToken.toString();
+      console.log("::::::", token)
+      const res = await fetch(
+        "https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
+        {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          }, body: JSON.stringify({
+            booking_id: id,
+            user_id: booking.user_id,
+            status
+          }),
+        }
+      );
 
-const updateStatus = async () => {
-  try {
-console.log("Check user first:::", booking)
-console.log("Check user id first:::", id)
-
-
-    const res = await fetch(
-      "https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          booking_id: id, 
-          user_id: booking.user_id,
-          status 
-        }),
-      }
-    );
-    console.log("Response::: ", res)
-
-    const data = await res.json();
-    console.log("Updated booking:", data);
-    alert("Booking status updated successfully!");
-    navigate("/");
-  } catch (err) {
-    console.error("Error updating booking:", err);
-    alert("Failed to update booking status");
-  }
-};
-
+      const data = await res.json();
+      console.log("Updated booking:", data);
+      alert("Booking status updated successfully!");
+      navigate("/");
+    } catch (err) {
+      console.error("Error updating booking:", err);
+      alert("Failed to update booking status");
+    }
+  };
 
   if (!booking)
     return (
@@ -84,7 +103,7 @@ console.log("Check user id first:::", id)
 
   return (
     <Paper sx={{ p: 4, maxWidth: 600, margin: "20px auto" }} elevation={3}>
-            {/* Back button */}
+      {/* Back button */}
       <IconButton onClick={() => navigate("/")}>
         <ArrowBackIcon />
       </IconButton>

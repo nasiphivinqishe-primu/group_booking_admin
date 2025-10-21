@@ -11,10 +11,10 @@ const awsconfig = {
       },
       oauth: {
         domain: "https://prim-u.auth.eu-west-1.amazoncognito.com",
-        scopes: ["openid", "email", "profile"], // add "aws.cognito.signin.user.admin" if needed
-        redirectSignIn: "http://localhost:3001/", // make sure the slash is here
-        redirectSignOut: "http://localhost:3001/", // same here
-        responseType: "code", // authorization code grant
+        scopes: ["openid", "email", "profile"], 
+        redirectSignIn: "http://localhost:3001/", 
+        redirectSignOut: "http://localhost:3001/", 
+        responseType: "code", 
       },
     },
   },

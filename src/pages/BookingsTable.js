@@ -25,55 +25,54 @@ const BookingsTable = () => {
 
   // Fetch data from backend
 
-useEffect(() => {
-  const fetchBookings = async () => {
-    try {
-      // Get current session
-      const session = await fetchAuthSession({ bypassCache: false });
-      const token = session.tokens.idToken.toString(); // <-- use this
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        // Get current session
+        const session = await fetchAuthSession({ bypassCache: false });
+        const token = session.tokens.idToken.toString();
 
-      const res = await fetch(
-        "https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
-        {
-          method: "GET",
-          headers: {
-            "Authorization": token,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+        const res = await fetch(
+          "https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
+          {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
-      const data = await res.json();
-      console.log("Bookings:", data);
+        const data = await res.json();
 
-      const formatted = data.bookings.map((b) => {
-        const rawStatus = b.status ? String(b.status) : 'unknown';
-        return {
-          id: b.booking_id,
-          groupName: b.user_id || 'N/A',
-          service: b.service_type || 'N/A',
-          date: b.date_of_booking
-            ? new Date(b.date_of_booking).toISOString().split('T')[0]
-            : 'N/A',
-          groupSize: b.group_size ? `${b.group_size} people` : 'N/A',
-          total: b.price ? `$${Number(b.price).toLocaleString()}` : '$0',
-          status: rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1),
-        };
-      });
+        const formatted = data.bookings.map((b) => {
+          const rawStatus = b.status ? String(b.status) : 'unknown';
+          return {
+            id: b.booking_id,
+            groupName: b.user_id || 'N/A',
+            service: b.service_type || 'N/A',
+            date: b.date_of_booking
+              ? new Date(b.date_of_booking).toISOString().split('T')[0]
+              : 'N/A',
+            groupSize: b.group_size ? `${b.group_size} people` : 'N/A',
+            total: b.price ? `$${Number(b.price).toLocaleString()}` : '$0',
+            status: rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1),
+          };
+        });
 
-      setBookings(formatted);
+        setBookings(formatted);
 
-    } catch (err) {
-      console.error('Error fetching bookings:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      } catch (err) {
+        console.error('Error fetching bookings:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchBookings();
-}, []);
+    fetchBookings();
+  }, []);
 
 
 

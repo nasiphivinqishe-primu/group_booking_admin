@@ -49,7 +49,7 @@ function AddBooking() {
       console.log(payload);
 
       const res = await fetch(
-        'https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/bookings',
+        'https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/bookings',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

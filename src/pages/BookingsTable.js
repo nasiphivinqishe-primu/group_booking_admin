@@ -33,7 +33,7 @@ const BookingsTable = () => {
         const token = session.tokens.idToken.toString();
 
         const res = await fetch(
-          "https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
+          "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
           {
             method: "GET",
             headers: {
@@ -57,7 +57,7 @@ const BookingsTable = () => {
               ? new Date(b.date_of_booking).toISOString().split('T')[0]
               : 'N/A',
             groupSize: b.group_size ? `${b.group_size} people` : 'N/A',
-            total: b.price ? `$${Number(b.price).toLocaleString()}` : '$0',
+            total: b.total_price ? `$${Number(b.total_price).toLocaleString()}` : '$0',
             status: rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1),
           };
         });

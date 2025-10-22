@@ -18,7 +18,7 @@ useEffect(() => {
       const token = session.tokens.idToken.toString();
 
       const res = await fetch(
-        "https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
+        "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
         {
           method: "GET",
           headers: {
@@ -90,11 +90,11 @@ useEffect(() => {
 
   // Total revenue
   const totalRevenue = currentBookings.reduce(
-    (sum, b) => sum + (parseFloat(b.price) || 0),
+    (sum, b) => sum + (parseFloat(b.total_price) || 0),
     0
   );
   const prevRevenue = previousBookings.reduce(
-    (sum, b) => sum + (parseFloat(b.price) || 0),
+    (sum, b) => sum + (parseFloat(b.total_price) || 0),
     0
   );
   const revenueChange = calcChange(totalRevenue, prevRevenue);

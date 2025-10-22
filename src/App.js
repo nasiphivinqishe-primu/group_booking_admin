@@ -57,7 +57,7 @@ function App() {
     return <div style={{ padding: "40px", textAlign: "center" }}>Loading...</div>;
   }
 
-  if (!groups.includes("admins")) {
+  if (!groups.includes("Admin")) {
     return (
       <div style={{ padding: "40px", textAlign: "center" }}>
         <h2>Access Denied</h2>

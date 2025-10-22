@@ -1,59 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import '../css/ExportBookings.css';
+import React, { useState, useEffect } from "react";
+import { fetchAuthSession } from "@aws-amplify/auth";
+import "../css/ExportBookings.css";
 
 // Utility: Convert array of objects to CSV string
 const convertToCSV = (data) => {
-  if (!data || data.length === 0) return '';
+  if (!data || data.length === 0) return "";
 
   const headers = Object.keys(data[0]);
   const rows = data.map((row) =>
-    headers.map((field) => `"${row[field] ?? ''}"`).join(',')
+    headers.map((field) => `"${row[field] ?? ""}"`).join(",")
   );
 
-  return [headers.join(','), ...rows].join('\n');
+  return [headers.join(","), ...rows].join("\n");
 };
 
 const ExportBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch bookings
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const res = await fetch("https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings");
-        const data = await res.json();
-        const formatted = data.bookings.map((b) => ({
-          id: b.booking_id,
-          groupName: b.user_id || 'N/A',
-          service: b.service_type || 'N/A',
-          date: b.date_of_booking
-            ? new Date(b.date_of_booking).toISOString().split('T')[0]
-            : 'N/A',
-          groupSize: b.group_size ? `${b.group_size} people` : 'N/A',
-          total: b.price ? `$${Number(b.price).toLocaleString()}` : '$0',
-          status: b.status ? String(b.status) : 'unknown',
-        }));
+        const session = await fetchAuthSession({ bypassCache: false });
+        const token = session.tokens.idToken.toString();
 
-        setBookings(formatted);
+        const res = await fetch(
+          "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!res.ok) {
+          console.error("Failed:", res.status);
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        setBookings(data.bookings || []);
       } catch (err) {
         console.error("Error fetching bookings:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchBookings();
   }, []);
 
   // Download as CSV
   const handleDownloadCSV = () => {
+    if (!bookings.length) {
+      alert("No bookings available to download.");
+      return;
+    }
+
     const csv = convertToCSV(bookings);
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
 
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `primu_bookings_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `primu_bookings_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
   };
@@ -61,9 +73,7 @@ const ExportBookings = () => {
   // Send bookings via email (placeholder)
   const handleSendEmail = async () => {
     try {
-      // This will later call Lambda endpoint
       console.log("Sending bookings via email:", bookings);
-
       alert("Bookings will be sent via email (Lambda integration coming soon).");
     } catch (err) {
       console.error("Error sending email:", err);
@@ -78,32 +88,36 @@ const ExportBookings = () => {
       <p>You can either download all bookings as a CSV file or send them via email.</p>
 
       <div className="export-actions">
-        <button className="button" onClick={handleDownloadCSV}>Download CSV</button>
-        <button className="button" onClick={handleSendEmail}>Send via Email</button>
+        <button className="button" onClick={handleDownloadCSV}>
+          Download CSV
+        </button>
+        <button className="button" onClick={handleSendEmail}>
+          Send via Email
+        </button>
       </div>
 
       <table className="bookings-table">
         <thead>
           <tr>
             <th>Booking ID</th>
-            <th>Group Name</th>
+            <th>User ID</th>
             <th>Service</th>
-            <th>Date</th>
-            <th>Group Size</th>
-            <th>Total</th>
+            <th>Date of Booking</th>
             <th>Status</th>
+            <th>Date Cancelled</th>
+            <th>Date Completed</th>
           </tr>
         </thead>
         <tbody>
           {bookings.map((b) => (
-            <tr key={b.id}>
-              <td>{b.id}</td>
-              <td>{b.groupName}</td>
-              <td>{b.service}</td>
-              <td>{b.date}</td>
-              <td>{b.groupSize}</td>
-              <td>{b.total}</td>
+            <tr key={b.booking_id}>
+              <td>{b.booking_id}</td>
+              <td>{b.user_id}</td>
+              <td>{b.service_type}</td>
+              <td>{b.date_of_booking}</td>
               <td>{b.status}</td>
+              <td>{b.date_cancelled ? new Date(b.date_cancelled).toLocaleString() : "-"}</td>
+              <td>{b.date_completed ? new Date(b.date_completed).toLocaleString() : "-"}</td>
             </tr>
           ))}
         </tbody>

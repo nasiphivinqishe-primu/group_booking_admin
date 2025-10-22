@@ -16,7 +16,6 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { fetchAuthSession } from "@aws-amplify/auth";
 
-
 const ViewBooking = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,30 +24,26 @@ const ViewBooking = () => {
 
   useEffect(() => {
     if (id) {
-      console.log(":::::ID:::", id)
       const fetchBooking = async () => {
         try {
-          // ✅ Get Cognito session and access token
           const session = await fetchAuthSession({ bypassCache: false });
           const token = session.tokens.idToken.toString();
 
           const res = await fetch(
-            `https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getBookingById?booking_id=${id}`,
+            `https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/getBookingById?booking_id=${id}`,
             {
               method: "GET",
               headers: {
-                "Authorization": `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }
           );
 
-          if (!res.ok) {
-            console.error("Failed:", res.status);
-            throw new Error(`HTTP error! Status: ${res.status}`);
-          }
+          if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
 
           const data = await res.json();
+          console.log(data)
           if (data.bookings && data.bookings.length > 0) {
             setBooking(data.bookings[0]);
             setStatus(data.bookings[0].status || "");
@@ -63,24 +58,39 @@ const ViewBooking = () => {
       fetchBooking();
     }
   }, [id]);
+
   const updateStatus = async () => {
+    if (status === "cancelled" || status === "completed") {
+      alert("This booking cannot be updated because it is cancelled or completed.");
+      return;
+    }
+
     try {
-      // ✅ Get Cognito session and access token
       const session = await fetchAuthSession({ bypassCache: false });
       const token = session.tokens.idToken.toString();
-      console.log("::::::", token)
+
+      // ✅ Add date_cancelled or date_completed if applicable
+      const updatePayload = {
+        booking_id: id,
+        user_id: booking.user_id,
+        status,
+      };
+
+      if (status === "cancelled") {
+        updatePayload.date_cancelled = new Date().toISOString();
+      } else if (status === "completed") {
+        updatePayload.date_completed = new Date().toISOString();
+      }
+
       const res = await fetch(
-        "https://q0nlug5wc5.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
+        "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
         {
           method: "PUT",
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-          }, body: JSON.stringify({
-            booking_id: id,
-            user_id: booking.user_id,
-            status
-          }),
+          },
+          body: JSON.stringify(updatePayload),
         }
       );
 
@@ -101,15 +111,18 @@ const ViewBooking = () => {
       </Box>
     );
 
+  const isStatusLocked = booking.status === "cancelled" || booking.status === "completed";
+
   return (
     <Paper sx={{ p: 4, maxWidth: 600, margin: "20px auto" }} elevation={3}>
-      {/* Back button */}
       <IconButton onClick={() => navigate("/")}>
         <ArrowBackIcon />
       </IconButton>
+
       <Typography variant="h4" gutterBottom>
         Booking Details
       </Typography>
+
       <Stack spacing={2}>
         <Typography>
           <b>Booking ID:</b> {booking.booking_id}
@@ -124,7 +137,20 @@ const ViewBooking = () => {
           <b>Created At:</b> {booking.date_of_booking}
         </Typography>
 
-        <FormControl fullWidth>
+        {/* Show Cancelled or Completed Dates */}
+        {booking.date_cancelled && (
+          <Typography color="error">
+            <b>Date Cancelled:</b> {new Date(booking.date_cancelled).toLocaleString()}
+          </Typography>
+        )}
+
+        {booking.date_completed && (
+          <Typography color="primary">
+            <b>Date Completed:</b> {new Date(booking.date_completed).toLocaleString()}
+          </Typography>
+        )}
+
+        <FormControl fullWidth disabled={isStatusLocked}>
           <InputLabel>Status</InputLabel>
           <Select
             value={status}
@@ -138,8 +164,13 @@ const ViewBooking = () => {
           </Select>
         </FormControl>
 
-        <Button variant="contained" color="primary" onClick={updateStatus}>
-          Update Status
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={updateStatus}
+          disabled={isStatusLocked}
+        >
+          {isStatusLocked ? "Status cannot be updated" : "Update Status"}
         </Button>
       </Stack>
     </Paper>

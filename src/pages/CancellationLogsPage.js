@@ -24,7 +24,7 @@ const CancellationLogsPage = () => {
         const token = session.tokens.idToken.toString();
 
         const res = await fetch(
-          "https://vzrhvh9tm4.execute-api.eu-west-1.amazonaws.com/dev/getCancelledAndRescheduledBookings",
+          "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/getCancelledAndRescheduledBookings",
           {
             method: "GET",
             headers: {

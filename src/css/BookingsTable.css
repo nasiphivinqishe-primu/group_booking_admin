@@ -29,12 +29,12 @@
 }
 
 .export-btn {
-  background-color: #9CA3AF; /* gray-400 */
+  background-color: #3B82F6 ; /* gray-400 */
   margin-right: 10px;
 }
 
 .new-booking-btn {
-  background-color: #3B82F6; /* blue-500 */
+  background-color: #9CA3AF; /* blue-500 */
 }
 
 .bookings-table {

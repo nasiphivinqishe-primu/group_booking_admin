@@ -117,8 +117,8 @@ const BookingsTable = () => {
       <div className="bookings-header">
         <h2>Recent Bookings</h2>
         <div>
-          <button className="button export-btn" onClick={handleExport}>Export</button>
-          <button className="button new-booking-btn" onClick={handleNewBooking}>
+          <button className="button export-btn" onClick={handleExport} >Export</button>
+          <button className="button new-booking-btn" onClick={handleNewBooking} disabled>
             + New Booking
           </button>
         </div>

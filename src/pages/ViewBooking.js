@@ -59,50 +59,53 @@ const ViewBooking = () => {
     }
   }, [id]);
 
-  const updateStatus = async () => {
-    if (status === "cancelled" || status === "completed") {
-      alert("This booking cannot be updated because it is cancelled or completed.");
-      return;
+const updateStatus = async () => {
+  // Prevent updates if the booking is already cancelled or completed
+  if (booking.status === "cancelled" || booking.status === "completed") {
+    alert("This booking cannot be updated because it is already cancelled or completed.");
+    return;
+  }
+
+  try {
+    const session = await fetchAuthSession({ bypassCache: false });
+    const token = session.tokens.idToken.toString();
+
+    const updatePayload = {
+      booking_id: id,
+      user_id: booking.user_id,
+      status,
+    };
+
+    if (status === "cancelled") {
+      updatePayload.date_cancelled = new Date().toISOString();
+    } else if (status === "completed") {
+      updatePayload.date_completed = new Date().toISOString();
     }
 
-    try {
-      const session = await fetchAuthSession({ bypassCache: false });
-      const token = session.tokens.idToken.toString();
-
-      // ✅ Add date_cancelled or date_completed if applicable
-      const updatePayload = {
-        booking_id: id,
-        user_id: booking.user_id,
-        status,
-      };
-
-      if (status === "cancelled") {
-        updatePayload.date_cancelled = new Date().toISOString();
-      } else if (status === "completed") {
-        updatePayload.date_completed = new Date().toISOString();
+    const res = await fetch(
+      "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatePayload),
       }
+    );
 
-      const res = await fetch(
-        "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatePayload),
-        }
-      );
+    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
 
-      const data = await res.json();
-      console.log("Updated booking:", data);
-      alert("Booking status updated successfully!");
-      navigate("/");
-    } catch (err) {
-      console.error("Error updating booking:", err);
-      alert("Failed to update booking status");
-    }
-  };
+    const data = await res.json();
+    console.log("Updated booking:", data);
+    alert("Booking status updated successfully!");
+    navigate("/");
+  } catch (err) {
+    console.error("Error updating booking:", err);
+    alert("Failed to update booking status");
+  }
+};
+
 
   if (!booking)
     return (

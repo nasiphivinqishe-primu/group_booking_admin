@@ -81,6 +81,15 @@
   color: #1E40AF;
 }
 
+.status-paid {
+  background-color: #EDE9FE;
+  color: #6B21A8;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  display: inline-block;
+}
 .action-buttons button {
   margin-right: 8px;
   padding: 6px 12px;

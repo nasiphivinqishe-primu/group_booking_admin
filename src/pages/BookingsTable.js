@@ -8,6 +8,8 @@ const statusColors = {
   pending: 'status-pill status-pending',
   cancelled: 'status-pill status-cancelled',
   completed: 'status-pill status-completed',
+  paid: 'status-pill status-paid',
+
 };
 
 const BookingsTable = () => {

@@ -59,52 +59,52 @@ const ViewBooking = () => {
     }
   }, [id]);
 
-const updateStatus = async () => {
-  // Prevent updates if the booking is already cancelled or completed
-  if (booking.status === "cancelled" || booking.status === "completed") {
-    alert("This booking cannot be updated because it is already cancelled or completed.");
-    return;
-  }
-
-  try {
-    const session = await fetchAuthSession({ bypassCache: false });
-    const token = session.tokens.idToken.toString();
-
-    const updatePayload = {
-      booking_id: id,
-      user_id: booking.user_id,
-      status,
-    };
-
-    if (status === "cancelled") {
-      updatePayload.date_cancelled = new Date().toISOString();
-    } else if (status === "completed") {
-      updatePayload.date_completed = new Date().toISOString();
+  const updateStatus = async () => {
+    // Prevent updates if the booking is already cancelled or completed
+    if (booking.status === "cancelled" || booking.status === "completed") {
+      alert("This booking cannot be updated because it is already cancelled or completed.");
+      return;
     }
 
-    const res = await fetch(
-      "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatePayload),
+    try {
+      const session = await fetchAuthSession({ bypassCache: false });
+      const token = session.tokens.idToken.toString();
+
+      const updatePayload = {
+        booking_id: id,
+        user_id: booking.user_id,
+        status,
+      };
+
+      if (status === "cancelled") {
+        updatePayload.date_cancelled = new Date().toISOString();
+      } else if (status === "completed") {
+        updatePayload.date_completed = new Date().toISOString();
       }
-    );
 
-    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+      const res = await fetch(
+        "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/updateBookingStatus",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatePayload),
+        }
+      );
 
-    const data = await res.json();
-    console.log("Updated booking:", data);
-    alert("Booking status updated successfully!");
-    navigate("/");
-  } catch (err) {
-    console.error("Error updating booking:", err);
-    alert("Failed to update booking status");
-  }
-};
+      if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+
+      const data = await res.json();
+      console.log("Updated booking:", data);
+      alert("Booking status updated successfully!");
+      navigate("/");
+    } catch (err) {
+      console.error("Error updating booking:", err);
+      alert("Failed to update booking status");
+    }
+  };
 
 
   if (!booking)
@@ -137,21 +137,16 @@ const updateStatus = async () => {
           <b>Service:</b> {booking.service_type}
         </Typography>
         <Typography>
-          <b>Created At:</b> {booking.date_of_booking}
+          <b>Date Of Booking:</b> {booking.date_of_booking}
         </Typography>
-
-        {/* Show Cancelled or Completed Dates */}
-        {booking.date_cancelled && (
-          <Typography color="error">
-            <b>Date Cancelled:</b> {new Date(booking.date_cancelled).toLocaleString()}
-          </Typography>
-        )}
-
-        {booking.date_completed && (
-          <Typography color="primary">
-            <b>Date Completed:</b> {new Date(booking.date_completed).toLocaleString()}
-          </Typography>
-        )}
+        <Typography>
+          <b>Created At:</b>{" "}
+          {new Date(booking.created_at).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "2-digit",
+          }).replace(/\s/g, " ")}
+        </Typography>
 
         <FormControl fullWidth disabled={isStatusLocked}>
           <InputLabel>Status</InputLabel>

@@ -9,28 +9,27 @@ const statusColors = {
   cancelled: 'status-pill status-cancelled',
   completed: 'status-pill status-completed',
   paid: 'status-pill status-paid',
-
 };
 
 const BookingsTable = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
+  const [originalBookings, setOriginalBookings] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [filters, setFilters] = useState({
-    groupName: '',
     service: '',
-    date: '',
+    sortOrder: 'default',
   });
 
   const [currentPage, setCurrentPage] = useState(1);
   const bookingsPerPage = 9;
 
-  // Fetch data from backend
-
+  // Fetch bookings
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        // Get current session
         const session = await fetchAuthSession({ bypassCache: false });
         const token = session.tokens.idToken.toString();
 
@@ -46,7 +45,6 @@ const BookingsTable = () => {
         );
 
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
         const data = await res.json();
 
         const formatted = data.bookings.map((b) => {
@@ -54,20 +52,25 @@ const BookingsTable = () => {
           return {
             id: b.booking_id,
             groupName: b.user_id || 'N/A',
+            createdAt: b.created_at
+              ? new Date(b.created_at).toISOString()
+              : null,
             service: b.service_type || 'N/A',
             date: b.date_of_booking
               ? new Date(b.date_of_booking).toISOString().split('T')[0]
               : 'N/A',
             groupSize: b.group_size ? `${b.group_size} people` : 'N/A',
-            total: b.total_price ? `$${Number(b.total_price).toLocaleString()}` : '$0',
+            total: b.total_price
+              ? `$${Number(b.total_price).toLocaleString()}`
+              : '$0',
             status: rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1),
           };
         });
 
         setBookings(formatted);
-
+        setOriginalBookings(formatted);
       } catch (err) {
-        console.error('Error fetching bookings:', err);
+        console.error('❌ Error fetching bookings:', err);
       } finally {
         setLoading(false);
       }
@@ -76,71 +79,92 @@ const BookingsTable = () => {
     fetchBookings();
   }, []);
 
+  //Extract unique services for dropdown
+  const uniqueServices = useMemo(() => {
+    const services = bookings.map((b) => b.service);
+    return [...new Set(services)].filter((s) => s && s !== 'N/A');
+  }, [bookings]);
+
+  // Filter & Sort logic
+const filteredBookings = useMemo(() => {
+  let result = [...(filters.sortOrder === 'default' ? originalBookings : bookings)];
+
+  // Filter by service
+  if (filters.service) {
+    result = result.filter((b) => b.service === filters.service);
+  }
+
+  // Sort only if latest/oldest
+  if (filters.sortOrder === 'latest') {
+    result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } else if (filters.sortOrder === 'oldest') {
+    result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }
+
+  return result;
+}, [filters, bookings, originalBookings]);
 
 
-  const filteredBookings = useMemo(() => {
-    return bookings.filter((b) => {
-      const matchGroup =
-        filters.groupName === '' ||
-        b.groupName.toLowerCase().includes(filters.groupName.toLowerCase());
-      const matchService =
-        filters.service === '' ||
-        b.service.toLowerCase().includes(filters.service.toLowerCase());
-      const matchDate = filters.date === '' || b.date === filters.date;
-      return matchGroup && matchService && matchDate;
-    });
-  }, [filters, bookings]);
-
+  //Pagination logic
   const totalPages = Math.ceil(filteredBookings.length / bookingsPerPage);
   const paginatedBookings = useMemo(() => {
     const start = (currentPage - 1) * bookingsPerPage;
     return filteredBookings.slice(start, start + bookingsPerPage);
   }, [filteredBookings, currentPage]);
 
-  const handleNewBooking = () => {
-    navigate('/add-booking');
-  };
-  const handleView = (bookingId) => {
-    navigate(`/booking/${bookingId}`);
-  };
-  const handleExport = () => {
-    navigate('/export-bookings');
+  //Handlers 
+  const handleNewBooking = () => navigate('/add-booking');
+  const handleView = (bookingId) => navigate(`/booking/${bookingId}`);
+  const handleExport = () => navigate('/export-bookings');
 
-  }
-
-  if (loading) {
-    return <div className="bookings-container">Loading bookings...</div>;
-  }
+  if (loading) return <div className="bookings-container">Loading bookings...</div>;
 
   return (
     <div className="bookings-container">
       <div className="bookings-header">
         <h2>Recent Bookings</h2>
         <div>
-          <button className="button export-btn" onClick={handleExport} >Export</button>
+          <button className="button export-btn" onClick={handleExport}>
+            Export
+          </button>
           <button className="button new-booking-btn" onClick={handleNewBooking} disabled>
             + New Booking
           </button>
         </div>
       </div>
 
-      {/* Filter Section */}
+      {/* Filters */}
       <div className="filter-section">
-        <input
-          placeholder="Filter by Group"
-          value={filters.groupName}
-          onChange={(e) => setFilters({ ...filters, groupName: e.target.value })}
-        />
-        <input
-          placeholder="Filter by Service"
+        {/* Service Selector */}
+        <select
           value={filters.service}
           onChange={(e) => setFilters({ ...filters, service: e.target.value })}
-        />
-        <input
-          type="date"
-          value={filters.date}
-          onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-        />
+        >
+          <option value="">All Services</option>
+          {uniqueServices.map((service) => (
+            <option key={service} value={service}>
+              {service}
+            </option>
+          ))}
+        </select>
+
+        {/* Sort Selector */}
+        <select
+          value={filters.sortOrder}
+          onChange={(e) => setFilters({ ...filters, sortOrder: e.target.value })}
+        >
+          <option value="default">Default</option>
+          <option value="latest">Latest</option>
+          <option value="oldest">Oldest</option>
+        </select>
+
+        {/* Reset Filters Button */}
+        <button
+          className="reset-filters-btn"
+          onClick={() => setFilters({ service: '', sortOrder: 'default' })}
+        >
+          Reset Filters
+        </button>
       </div>
 
       {/* Bookings Table */}
@@ -149,8 +173,9 @@ const BookingsTable = () => {
           <tr>
             <th>Booking ID</th>
             <th>Group Name</th>
+            <th>Created At</th>
             <th>Service</th>
-            <th>Date</th>
+            <th>Appointment Date</th>
             <th>Group Size</th>
             <th>Total</th>
             <th>Status</th>
@@ -162,22 +187,32 @@ const BookingsTable = () => {
             <tr key={booking.id}>
               <td>{booking.id}</td>
               <td>{booking.groupName}</td>
+              <td>
+                {booking.createdAt
+                  ? new Date(booking.createdAt).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "2-digit",
+                  })
+                  : 'N/A'}
+              </td>
               <td>{booking.service}</td>
               <td>{booking.date}</td>
               <td>{booking.groupSize}</td>
               <td>{booking.total}</td>
               <td>
                 <span
-                  className={statusColors[booking.status.toLowerCase()] || 'status-pill'}
+                  className={
+                    statusColors[booking.status.toLowerCase()] || 'status-pill'
+                  }
                 >
                   {booking.status}
                 </span>
               </td>
               <td className="action-buttons">
-                <button className="view-btn" onClick={() => handleView(booking.id)}>View</button>
-                {/* {booking.status.toLowerCase() !== 'completed' && (
-                  <button className="edit-btn">Download</button>
-                )} */}
+                <button className="view-btn" onClick={() => handleView(booking.id)}>
+                  View
+                </button>
               </td>
             </tr>
           ))}
@@ -196,7 +231,7 @@ const BookingsTable = () => {
           Page {currentPage} of {totalPages}
         </span>
         <button
-          disabled={currentPage === totalPages}
+          disabled={currentPage === totalPages || totalPages === 0}
           onClick={() => setCurrentPage((prev) => prev + 1)}
         >
           Next

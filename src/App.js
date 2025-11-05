@@ -12,6 +12,8 @@ import ConfigurePolicies from "./pages/ConfigurePolicies";
 import Sidebar from "./components/Sidebar";
 import ViewBooking from "./pages/ViewBooking";
 import ExportBookings from "./pages/ExportBookings";
+import NotificationsPage from "./pages/notifications";
+import { NotificationsProvider } from './context/NotificationsContext';
 
 // Custom UI overrides
 const components = {
@@ -38,9 +40,7 @@ function App() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        // First get the user
         const user = await getCurrentUser();
-        // Then fetch tokens/session
         const session = await fetchAuthSession();
         const payload = session.tokens?.idToken?.payload || {};
         setUserEmail(payload.email || user.signInDetails?.loginId || "Unknown");
@@ -75,23 +75,28 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "center", // horizontally center welcome message
-          alignItems: "center",
-          padding: "10px 20px",
-          background: "#f9f4fe",
-          borderBottom: "1px solid #ddd",
-        }}
-      >
-        <h3>Welcome, {userEmail}</h3>
-      </header>
-      <div style={{ display: "flex" }}>
-        <div style={{ marginLeft: "220px", padding: "20px", width: "100%" }}>
-          <Router>
-            <Sidebar />
+    <NotificationsProvider>
+      <Router>
+        <div className="App" style={{ display: "flex" }}>
+          {/* Sidebar */}
+          <Sidebar userEmail={userEmail} />
+
+          {/* Main content */}
+          <div style={{ flex: 1, padding: "20px", marginLeft: "220px" }}>
+            <header
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: "10px 20px",
+                background: "#f9f4fe",
+                borderBottom: "1px solid #ddd",
+                marginBottom: "20px",
+              }}
+            >
+              <h3>Welcome, {userEmail}</h3>
+            </header>
+
             <Routes>
               <Route path="/" element={<BookingsTable />} />
               <Route path="/add-booking" element={<AddBooking />} />
@@ -100,11 +105,12 @@ function App() {
               <Route path="/configure-policies" element={<ConfigurePolicies />} />
               <Route path="/booking/:id" element={<ViewBooking />} />
               <Route path="/export-bookings" element={<ExportBookings />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
             </Routes>
-          </Router>
+          </div>
         </div>
-      </div>
-    </div>
+      </Router>
+    </NotificationsProvider>
   );
 }
 

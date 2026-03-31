@@ -9,6 +9,7 @@ const statusColors = {
   cancelled: 'status-pill status-cancelled',
   completed: 'status-pill status-completed',
   paid: 'status-pill status-paid',
+  paid: 'status-pill status-paid',
 };
 
 const BookingsTable = () => {
@@ -33,39 +34,34 @@ const BookingsTable = () => {
         const session = await fetchAuthSession({ bypassCache: false });
         const token = session.tokens.idToken.toString();
 
-        const res = await fetch(
-          "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
-          {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      const res = await fetch(
+        "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
+        {
+          method: "GET",
+          headers: {
+            "Authorization": token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
 
-        const formatted = data.bookings.map((b) => {
-          const rawStatus = b.status ? String(b.status) : 'unknown';
-          return {
-            id: b.booking_id,
-            groupName: b.user_id || 'N/A',
-            createdAt: b.created_at
-              ? new Date(b.created_at).toISOString()
-              : null,
-            service: b.service_type || 'N/A',
-            date: b.date_of_booking
-              ? new Date(b.date_of_booking).toISOString().split('T')[0]
-              : 'N/A',
-            groupSize: b.group_size ? `${b.group_size} people` : 'N/A',
-            total: b.total_price
-              ? `$${Number(b.total_price).toLocaleString()}`
-              : '$0',
-            status: rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1),
-          };
-        });
+      const formatted = data.bookings.map((b) => {
+        const rawStatus = b.status ? String(b.status) : 'unknown';
+        return {
+          id: b.booking_id,
+          groupName: b.user_id || 'N/A',
+          service: b.service_type || 'N/A',
+          date: b.date_of_booking
+            ? new Date(b.date_of_booking).toISOString().split('T')[0]
+            : 'N/A',
+          groupSize: b.group_size ? `${b.group_size} people` : 'N/A',
+          total: b.amount_paid ? `$${Number(b.amount_paid).toLocaleString()}` : '$0',
+          status: rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1),
+        };
+      });
 
         setBookings(formatted);
         setOriginalBookings(formatted);

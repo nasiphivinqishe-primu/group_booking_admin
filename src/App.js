@@ -12,8 +12,8 @@ import ConfigurePolicies from "./pages/ConfigurePolicies";
 import Sidebar from "./components/Sidebar";
 import ViewBooking from "./pages/ViewBooking";
 import ExportBookings from "./pages/ExportBookings";
-import NotificationsPage from "./pages/notifications";
-import { NotificationsProvider } from './context/NotificationsContext';
+
+const SIDEBAR_WIDTH = 220;
 
 // Custom UI overrides
 const components = {
@@ -41,10 +41,18 @@ function App() {
     async function fetchUser() {
       try {
         const user = await getCurrentUser();
+        console.log("User basic info:", user);
+
         const session = await fetchAuthSession();
         const payload = session.tokens?.idToken?.payload || {};
+
+        console.log("ID token payload:", payload);
+
         setUserEmail(payload.email || user.signInDetails?.loginId || "Unknown");
         setGroups(payload["cognito:groups"] || []);
+
+        console.log("Authenticated user email:", payload.email);
+        console.log("User groups:", payload["cognito:groups"]);
       } catch (err) {
         console.error("Error fetching user session:", err);
       }
@@ -66,7 +74,14 @@ function App() {
           onClick={async () => {
             await signOut();
           }}
-          style={{ padding: "6px 12px" }}
+          style={{
+            padding: "10px 16px",
+            border: "none",
+            borderRadius: "8px",
+            background: "#6a1b9a",
+            color: "#fff",
+            cursor: "pointer",
+          }}
         >
           Sign out
         </button>
@@ -75,28 +90,83 @@ function App() {
   }
 
   return (
-    <NotificationsProvider>
-      <Router>
-        <div className="App" style={{ display: "flex" }}>
-          {/* Sidebar */}
-          <Sidebar userEmail={userEmail} />
+    <Router>
+      <div
+        className="App"
+        style={{
+          minHeight: "100vh",
+          background: "#f7f8fc",
+        }}
+      >
+        <Sidebar />
 
-          {/* Main content */}
-          <div style={{ flex: 1, padding: "20px", marginLeft: "220px" }}>
-            <header
+        <div
+          style={{
+            marginLeft: `${SIDEBAR_WIDTH}px`,
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <header
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "18px 24px",
+              background: "#ffffff",
+              borderBottom: "1px solid #e5e7eb",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
+              position: "sticky",
+              top: 0,
+              zIndex: 900,
+            }}
+          >
+            <div>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "22px",
+                  color: "#1f2937",
+                }}
+              >
+                Hi, {userEmail}
+              </h2>
+              <p
+                style={{
+                  margin: "4px 0 0",
+                  fontSize: "14px",
+                  color: "#6b7280",
+                }}
+              >
+                Welcome to the PrimU admin dashboard
+              </p>
+            </div>
+
+            <button
+              onClick={async () => {
+                await signOut();
+              }}
               style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                padding: "10px 20px",
-                background: "#f9f4fe",
-                borderBottom: "1px solid #ddd",
-                marginBottom: "20px",
+                padding: "10px 16px",
+                border: "none",
+                borderRadius: "10px",
+                background: "#6a1b9a",
+                color: "#fff",
+                fontWeight: 600,
+                cursor: "pointer",
               }}
             >
-              <h3>Welcome, {userEmail}</h3>
-            </header>
+              Logout
+            </button>
+          </header>
 
+          <main
+            style={{
+              padding: "24px",
+              flex: 1,
+            }}
+          >
             <Routes>
               <Route path="/" element={<BookingsTable />} />
               <Route path="/add-booking" element={<AddBooking />} />
@@ -105,12 +175,11 @@ function App() {
               <Route path="/configure-policies" element={<ConfigurePolicies />} />
               <Route path="/booking/:id" element={<ViewBooking />} />
               <Route path="/export-bookings" element={<ExportBookings />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
             </Routes>
-          </div>
+          </main>
         </div>
-      </Router>
-    </NotificationsProvider>
+      </div>
+    </Router>
   );
 }
 

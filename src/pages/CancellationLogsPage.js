@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { fetchAuthSession } from "@aws-amplify/auth";
-
 import "../css/CancellationLogs.css";
 
 const CancellationLogsPage = () => {
@@ -45,7 +44,7 @@ const CancellationLogsPage = () => {
           user: b.user_id || "Unknown",
           action: b.status === "cancelled" ? "cancelled" : "rescheduled",
           date: b.date || new Date().toISOString().slice(0, 10),
-          reason: b.reason || "N/A",
+          reason: b.cancellation_reason || "N/A",
         }));
 
         setLogs(mappedLogs);

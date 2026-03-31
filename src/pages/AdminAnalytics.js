@@ -1,12 +1,11 @@
 import "../css/AdminAnalytics.css";
 import React, { useState, useMemo, useEffect } from "react";
-import { fetchAuthSession } from "@aws-amplify/auth";
-
+import { fetchAuthSession } from '@aws-amplify/auth';
 import { Line, Pie } from "react-chartjs-2";
 import "chart.js/auto";
 
 const AnalyticsReports = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState("30d");
+  const [selectedPeriod, setSelectedPeriod] = useState("all");
   const [bookingsData, setBookingsData] = useState([]);
 
   // Fetch bookings from backend
@@ -41,6 +40,31 @@ useEffect(() => {
 
   fetchBookings();
 }, []);
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        // Get current session
+        const session = await fetchAuthSession({ bypassCache: false });
+        const token = session.tokens.idToken.toString(); // <-- use this
+
+        const res = await fetch(
+          "https://zr1psnorg6.execute-api.eu-west-1.amazonaws.com/dev/getAllBookings",
+          {
+            method: "GET", 
+            headers: {
+              "Authorization": token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const data = await res.json();
+        setBookingsData(data.bookings || []);
+      } catch (err) {
+        console.error("Error fetching bookings:", err);
+      }
+    };
+    fetchBookings();
+  }, []);
 
   // Helper: get date range for current period
   const getDateRange = (period) => {
@@ -60,9 +84,9 @@ useEffect(() => {
   const [prevStart, prevEnd] =
     currentStart && currentEnd
       ? [
-          new Date(currentStart.getTime() - (currentEnd - currentStart)),
-          currentStart,
-        ]
+        new Date(currentStart.getTime() - (currentEnd - currentStart)),
+        currentStart,
+      ]
       : [null, null];
 
   // Filtered bookings for current + previous
@@ -90,11 +114,11 @@ useEffect(() => {
 
   // Total revenue
   const totalRevenue = currentBookings.reduce(
-    (sum, b) => sum + (parseFloat(b.total_price) || 0),
+    (sum, b) => sum + (parseFloat(b.amount_paid) || 0),
     0
   );
   const prevRevenue = previousBookings.reduce(
-    (sum, b) => sum + (parseFloat(b.total_price) || 0),
+    (sum, b) => sum + (parseFloat(b.amount_paid) || 0),
     0
   );
   const revenueChange = calcChange(totalRevenue, prevRevenue);
@@ -108,21 +132,21 @@ useEffect(() => {
   const averageGroupSize =
     currentBookings.length > 0
       ? (
-          currentBookings.reduce(
-            (sum, b) => sum + (parseInt(b.group_size) || 0),
-            0
-          ) / currentBookings.length
-        ).toFixed(1)
+        currentBookings.reduce(
+          (sum, b) => sum + (parseInt(b.group_size) || 0),
+          0
+        ) / currentBookings.length
+      ).toFixed(1)
       : 0;
 
   const prevGroupSize =
     previousBookings.length > 0
       ? (
-          previousBookings.reduce(
-            (sum, b) => sum + (parseInt(b.group_size) || 0),
-            0
-          ) / previousBookings.length
-        ).toFixed(1)
+        previousBookings.reduce(
+          (sum, b) => sum + (parseInt(b.group_size) || 0),
+          0
+        ) / previousBookings.length
+      ).toFixed(1)
       : 0;
 
   const groupSizeChange = calcChange(averageGroupSize, prevGroupSize);

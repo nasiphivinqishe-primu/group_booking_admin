@@ -81,6 +81,11 @@
   color: #1E40AF;
 }
 
+.status-paid{
+    background-color: #f3aff1;
+  color: #ea8ff2;
+}
+
 .status-paid {
   background-color: #EDE9FE;
   color: #6B21A8;
